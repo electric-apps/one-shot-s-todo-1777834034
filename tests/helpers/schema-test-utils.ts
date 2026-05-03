@@ -1,4 +1,4 @@
-import type { ZodObject, ZodRawShape, ZodTypeAny } from "zod"
+import type { ZodObject, ZodRawShape, ZodTypeAny } from "zod/v4"
 
 // Re-export parseDates so tests can import from the test helper
 export { parseDates } from "@/db/utils"
@@ -52,7 +52,7 @@ function resolveTypeName(def: Record<string, unknown>): string | undefined {
 function generateValueForType(key: string, zodType: ZodTypeAny): unknown {
 	// Unwrap optional/nullable/default wrappers to find the inner type
 	const inner = unwrap(zodType)
-	const typeName = inner._def ? resolveTypeName(inner._def as Record<string, unknown>) : undefined
+	const typeName = inner._def ? resolveTypeName(inner._def as unknown as Record<string, unknown>) : undefined
 
 	// UUID fields — id, *Id (camelCase), or *_id (snake_case)
 	if (key === "id" || key.endsWith("Id") || key.endsWith("_id")) {
@@ -78,7 +78,7 @@ function generateValueForType(key: string, zodType: ZodTypeAny): unknown {
 			return new Date()
 		case "ZodEnum":
 			// Return the first enum value
-			return inner._def?.values?.[0] ?? "unknown"
+			return ((inner._def as unknown as Record<string, unknown>)?.["values"] as string[] | undefined)?.[0] ?? "unknown"
 		case "ZodArray":
 			return []
 		case "ZodUUID":
@@ -89,7 +89,7 @@ function generateValueForType(key: string, zodType: ZodTypeAny): unknown {
 }
 
 function unwrap(zodType: ZodTypeAny): ZodTypeAny {
-	const def = zodType._def as Record<string, unknown> | undefined
+	const def = zodType._def as unknown as Record<string, unknown> | undefined
 	if (!def) return zodType
 
 	const typeName = resolveTypeName(def)
